@@ -1,4 +1,4 @@
-from requests_html import HTMLSession, user_agent
+from requests_html import HTMLSession
 
 
 SITE_URL = 'https://itpanda.net'
@@ -40,7 +40,7 @@ class Spider:
                     book_num += 1
                     bool_title, book_link = book.text, f"{SITE_URL}{book.attrs['href']}"
                     pan_url, pan_key = self.get_book(book_link)
-                    print(title, num, bool_title, pan_url, pan_key)
+                    print(f'{title}, {num}, {bool_title}, {pan_url}, {pan_key}')
                 page += 1
 
     def get_book(self, book_link):
