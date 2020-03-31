@@ -56,7 +56,19 @@ class Spider:
         pan_key = r.html.search('提取码:{}</p>')[0]
         return pan_url, pan_key
 
+    def get_all_bools(self):
+        for i in range(1, 46):
+            url = f'{SITE_URL}/book/?sort_by=created_at&page={i}'
+            r = session.get(url)
+            books_list = r.html.find('.list-unstyled', first=True)
+            books = books_list.find('.media .mt-0 a')
+            for book in books:
+                bool_title, book_link = book.text, f"{SITE_URL}{book.attrs['href']}"
+                pan_url, pan_key = self.get_book(book_link)
+                print(f'{bool_title}, {pan_url}, {pan_key}')
+
 
 if __name__ == '__main__':
     s = Spider()
-    s.get_books()
+    # s.get_books()
+    s.get_all()
