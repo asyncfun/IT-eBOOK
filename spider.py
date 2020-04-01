@@ -1,4 +1,5 @@
 import os
+from bs4 import BeautifulSoup
 from requests_html import HTMLSession
 from requests.adapters import HTTPAdapter
 
@@ -13,44 +14,43 @@ PROXIES = {'http': PROXIES_SERVER, 'https': PROXIES_SERVER}
 
 
 class Spider:
-    def get_category(self):
-        data = []
+    def get_markdown(self):
         r = session.get(SITE_URL, proxies=PROXIES)
-        nav = r.html.find('.nav', first=True)
-        items = nav.find('.nav-item a')
+
+        nav = r.html.find('ul.nav', first=True)
+        soup = BeautifulSoup(nav.html, features="lxml")
+        ul = soup.find('ul')
+        items = ul.find_all('li', recursive=False)
+        print('# IT eBOOK')
         for item in items:
-            title, num = item.text.split(' ')
-            cate = {
-                'title': title,
-                'num': num.lstrip('(').rstrip(')'),
-                'link': f"{SITE_URL}{item.attrs['href']}"
-            }
-            data.append(cate)
-        return data
+            sub_items = item.ul.find_all('li')
+            cate_title = item.a.string.split('(')[0].strip()
+            cate_link = f'{SITE_URL}{item.a["href"]}'
+            print(f'## {cate_title}')
+            for sub in sub_items:
+                sub_cate_title = sub.a.string.split('(')[0].strip()
+                num = int(sub.a.string.split('(')[1].strip(')').strip())
+                sub_cate_link = f'{SITE_URL}{sub.a["href"]}'
+                print(f'### {sub_cate_title}')
+                self.get_books_by_cate(cate_link=sub_cate_link, num=num)
+            if not sub_items:
+                num = int(item.a.string.split('(')[1].strip(')').strip())
+                self.get_books_by_cate(cate_link=cate_link, num=num)
 
-    def get_books(self):
-        category = self.get_category()
-        for c in category:
-            title = c['title']
-            link = c['link']
-            num = int(c['num'])
+    def get_books_by_cate(self, cate_link, num):
+        book_num = 0
+        page = 1
+        while book_num < num:
+            r = session.get(f'{cate_link}?sort_by=created_at&page={page}', proxies=PROXIES)
+            books_list = r.html.find('.list-unstyled', first=True)
+            books = books_list.find('.media .mt-0 a')
 
-            book_num = 0
-            page = 1
-            while book_num < num:
-                r = session.get(f'{link}?sort_by=created_at&page={page}', proxies=PROXIES)
-                books_list = r.html.find('.list-unstyled', first=True)
-                books = books_list.find('.media .mt-0 a')
-
-                for book in books:
-                    book_num += 1
-                    bool_title, book_link = book.text, f"{SITE_URL}{book.attrs['href']}"
-                    try:
-                        pan_url, pan_key = self.get_book(book_link)
-                        print(f'{title}, {bool_title}, {pan_url}, {pan_key}')
-                    except Exception as e:
-                        print(e, bool_title, book_link)
-                page += 1
+            for book in books:
+                book_num += 1
+                bool_title, book_link = book.text, f"{SITE_URL}{book.attrs['href']}"
+                pan_url, pan_key = self.get_book(book_link)
+                print(f'- [{bool_title}]({pan_url}) 提取码: {pan_key}')
+            page += 1
 
     def get_book(self, book_link):
         r = session.get(book_link, proxies=PROXIES)
@@ -68,4 +68,4 @@ class Spider:
 
 if __name__ == '__main__':
     s = Spider()
-    s.get_books()
+    s.get_markdown()
