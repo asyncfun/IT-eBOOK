@@ -6,8 +6,9 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-requests = {index = "https://mirrors.aliyun.com/pypi/simple/",version = "*"}
-requests-html = {index = "https://mirrors.aliyun.com/pypi/simple/",version = "*"}
+requests = "*"
+requests-html = "*"
+pyppeteer = "*"
 
 [requires]
 python_version = "3.7"
